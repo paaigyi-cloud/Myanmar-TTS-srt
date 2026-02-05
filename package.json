@@ -1,7 +1,0 @@
-{
-  "name": "myanmar-tts",
-  "version": "1.0.0",
-  "dependencies": {
-    "msedge-tts": "^1.3.2"
-  }
-}
