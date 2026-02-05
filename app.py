@@ -25,7 +25,6 @@ DEFAULT_RULES = """
 # --- Helper Functions ---
 def remove_silence_from_end(audio_chunk, silence_thresh=-40.0, chunk_size=10):
     try:
-        # FFmpeg ရှိမှ ဒါအလုပ်လုပ်ပါတယ် (Render Docker မှာ FFmpeg ရှိလို့ အိုကေပါတယ်)
         reversed_audio = audio_chunk.reverse()
         trim_ms = 0
         while trim_ms < len(reversed_audio):
@@ -108,17 +107,13 @@ async def generate_precise_audio(text, pronunciation_rules, voice_key, rate_str,
             communicate = edge_tts.Communicate(speakable_text, voice_key, rate=rate_str, pitch=pitch_str)
             await communicate.save(temp_fname)
             
-            # FFmpeg Logic Here (Safe on Render Docker)
             audio_segment = AudioSegment.from_mp3(temp_fname)
             audio_segment = remove_silence_from_end(audio_segment)
             
             segment_duration = len(audio_segment) / 1000.0
             combined_audio += audio_segment
-            
-            # Natural Pause (50ms)
             combined_audio += AudioSegment.silent(duration=50)
 
-            # SRT Logic
             srt_chunks = smart_split_text_for_srt(audio_text_segment, max_chars=max_srt_chars)
             total_chars = len(audio_text_segment) or 1
             segment_start_time = current_audio_time
@@ -177,7 +172,6 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-# UI Setup
 with gr.Blocks(title="Myanmar TTS Pro") as demo:
     gr.Markdown("## မြန်မာ TTS Pro (Render HQ)")
     with gr.Row():
@@ -198,5 +192,5 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
     btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
 if __name__ == "__main__":
-    # ဒီနေရာမှာ ၃ ယောက်ပြိုင်သုံးလို့ရအောင် ပြင်ထားပါတယ်
-    demo.queue(default_concurrency_limit=3).launch(server_name="0.0.0.0", server_port=7860)
+    # ဒီမှာ ၂ ယောက် (Fair Limit) ထားလိုက်ပါပြီ
+    demo.queue(default_concurrency_limit=2).launch(server_name="0.0.0.0", server_port=7860)
