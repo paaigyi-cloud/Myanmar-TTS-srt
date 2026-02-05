@@ -6,11 +6,10 @@ import os
 from pydub import AudioSegment
 import re
 import datetime
-import pytz # အချိန်ကို မြန်မာစံတော်ချိန်နဲ့ ပြဖို့
 
 # --- Global Variables ---
 SESSION_COUNT = 0
-LAST_USED_TIME = "မရှိသေးပါ"
+TOTAL_SECONDS = 0.0 # စုစုပေါင်း ကြာချိန်ကို စက္ကန့်နဲ့ မှတ်ပါမယ်
 
 # --- Setup ---
 VOICES = [
@@ -51,6 +50,13 @@ def format_srt_time(seconds):
     minutes %= 60
     seconds %= 60
     return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
+
+def format_duration_display(total_seconds):
+    # စက္ကန့်စုစုပေါင်းကို "၀၁ မိနစ် ၃၀ စက္ကန့်" ပုံစံပြောင်းနည်း
+    total_seconds = int(total_seconds)
+    minutes = total_seconds // 60
+    seconds = total_seconds % 60
+    return f"{minutes:02} မိနစ် {seconds:02} စက္ကန့်"
 
 def apply_pronunciation_rules(text, rules_str):
     if not rules_str: return text
@@ -150,21 +156,6 @@ async def generate_precise_audio(text, pronunciation_rules, voice_key, rate_str,
 async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, volume_val, filename_val, platform_val):
     if not text.strip(): raise gr.Error("စာရိုက်ထည့်ပါ!")
 
-    # --- COUNTER & TIME LOGIC ---
-    global SESSION_COUNT, LAST_USED_TIME
-    
-    SESSION_COUNT += 1
-    
-    # မြန်မာစံတော်ချိန် (MMT)
-    tz_MM = pytz.timezone('Asia/Yangon')
-    datetime_MM = datetime.datetime.now(tz_MM)
-    LAST_USED_TIME = datetime_MM.strftime("%I:%M %p")
-
-    # Status Message
-    status_msg = f"📊 အသုံးပြုမှု: {SESSION_COUNT} ကြိမ် | 🕒 နောက်ဆုံးသုံးချိန်: {LAST_USED_TIME}"
-    print(f"\n🔔 [USAGE] Count: {SESSION_COUNT} | Time: {LAST_USED_TIME}\n")
-    # ----------------------------
-    
     target_key = "my-MM-ThihaNeural"
     if "Female" in str(voice_name): target_key = "my-MM-NilarNeural"
     elif "Ryan" in str(voice_name): target_key = "en-GB-RyanNeural"
@@ -189,6 +180,23 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_text)
 
+        # --- USAGE TRACKING LOGIC ---
+        global SESSION_COUNT, TOTAL_SECONDS
+        
+        # ၁။ အကြိမ်အရေအတွက် တိုးမယ်
+        SESSION_COUNT += 1
+        
+        # ၂။ ထွက်လာတဲ့ အသံဖိုင်ရဲ့ အရှည် (စက္ကန့်) ကို ပေါင်းထည့်မယ်
+        generated_duration = len(final_audio) / 1000.0 # milliseconds to seconds
+        TOTAL_SECONDS += generated_duration
+        
+        # ၃။ စာတန်းပြောင်းမယ် (Format: XX မိနစ် XX စက္ကန့်)
+        duration_str = format_duration_display(TOTAL_SECONDS)
+        status_msg = f"📊 သုံးစွဲမှု: {SESSION_COUNT} ကြိမ် | ⏳ စုစုပေါင်းကြာချိန်: {duration_str}"
+        
+        print(f"\n🔔 [USAGE] Added {generated_duration:.2f}s | Total: {duration_str}\n")
+        # ----------------------------
+
         return audio_path, srt_path, status_msg
         
     except Exception as e:
@@ -201,7 +209,7 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="Voice")
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT Type")
             
-            # Updated Settings: Pitch=7, Speed=25, Vol=10
+            # Settings (+7, +25, +10)
             tone = gr.Slider(-50, 50, value=7, label="Pitch")
             speed = gr.Slider(-50, 50, value=25, label="Speed")
             vol = gr.Slider(0, 20, value=10, label="Vol Boost")
@@ -211,7 +219,9 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             fname = gr.Textbox(label="File Name")
             
             btn = gr.Button("Generate", variant="primary")
-            lbl_status = gr.Label(value="📊 အသုံးပြုမှု: 0 | 🕒 စောင့်ဆိုင်းနေပါသည်...", label="Live Status")
+            
+            # Status Label (Usage Count & Duration)
+            lbl_status = gr.Label(value="📊 သုံးစွဲမှု: 0 | ⏳ စုစုပေါင်းကြာချိန်: ၀၀ မိနစ် ၀၀ စက္ကန့်", label="Live Usage Stats")
             
         with gr.Column():
             out_aud = gr.Audio(label="Audio")
