@@ -178,9 +178,12 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
         with gr.Column():
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="Voice")
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT Type")
-            tone = gr.Slider(-50, 50, 0, 1, label="Pitch")
-            speed = gr.Slider(-50, 50, 0, 1, label="Speed")
-            vol = gr.Slider(0, 20, 0, 1, label="Vol Boost")
+            
+            # မိတ်ဆွေ လိုချင်တဲ့ Default တန်ဖိုးများ (+15, +25, +10)
+            tone = gr.Slider(-50, 50, value=15, label="Pitch")
+            speed = gr.Slider(-50, 50, value=25, label="Speed")
+            vol = gr.Slider(0, 20, value=10, label="Vol Boost")
+            
             text = gr.Textbox(lines=5, label="Text")
             rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="Rules")
             fname = gr.Textbox(label="File Name")
@@ -192,5 +195,4 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
     btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
 if __name__ == "__main__":
-    # Version 3 အတွက် ဒီစာသားက အမှန်ပါ
     demo.queue(concurrency_count=2).launch(server_name="0.0.0.0", server_port=7860)
