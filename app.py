@@ -9,7 +9,14 @@ import datetime
 
 # --- Global Variables ---
 SESSION_COUNT = 0
-TOTAL_SECONDS = 0.0 # စုစုပေါင်း ကြာချိန်ကို စက္ကန့်နဲ့ မှတ်ပါမယ်
+TOTAL_SECONDS = 0.0
+
+# --- CSS to Hide Warnings ---
+# ဒီ CSS ကုဒ်က အဝါရောင် Warning box တွေကို အတင်းဖျောက်ခိုင်းလိုက်တာပါ
+CUSTOM_CSS = """
+.toast-wrap { display: none !important; }
+footer { display: none !important; }
+"""
 
 # --- Setup ---
 VOICES = [
@@ -52,7 +59,6 @@ def format_srt_time(seconds):
     return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
 
 def format_duration_display(total_seconds):
-    # စက္ကန့်စုစုပေါင်းကို "၀၁ မိနစ် ၃၀ စက္ကန့်" ပုံစံပြောင်းနည်း
     total_seconds = int(total_seconds)
     minutes = total_seconds // 60
     seconds = total_seconds % 60
@@ -180,36 +186,29 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_text)
 
-        # --- USAGE TRACKING LOGIC ---
         global SESSION_COUNT, TOTAL_SECONDS
-        
-        # ၁။ အကြိမ်အရေအတွက် တိုးမယ်
         SESSION_COUNT += 1
-        
-        # ၂။ ထွက်လာတဲ့ အသံဖိုင်ရဲ့ အရှည် (စက္ကန့်) ကို ပေါင်းထည့်မယ်
-        generated_duration = len(final_audio) / 1000.0 # milliseconds to seconds
+        generated_duration = len(final_audio) / 1000.0
         TOTAL_SECONDS += generated_duration
         
-        # ၃။ စာတန်းပြောင်းမယ် (Format: XX မိနစ် XX စက္ကန့်)
         duration_str = format_duration_display(TOTAL_SECONDS)
         status_msg = f"📊 သုံးစွဲမှု: {SESSION_COUNT} ကြိမ် | ⏳ စုစုပေါင်းကြာချိန်: {duration_str}"
         
         print(f"\n🔔 [USAGE] Added {generated_duration:.2f}s | Total: {duration_str}\n")
-        # ----------------------------
 
         return audio_path, srt_path, status_msg
         
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-with gr.Blocks(title="Myanmar TTS Pro") as demo:
+# CSS ကို ဒီနေရာမှာ ထည့်လိုက်ပါတယ်
+with gr.Blocks(title="Myanmar TTS Pro", css=CUSTOM_CSS) as demo:
     gr.Markdown("## မြန်မာ TTS Pro (Render HQ)")
     with gr.Row():
         with gr.Column():
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="Voice")
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT Type")
             
-            # Settings (+7, +25, +10)
             tone = gr.Slider(-50, 50, value=7, label="Pitch")
             speed = gr.Slider(-50, 50, value=25, label="Speed")
             vol = gr.Slider(0, 20, value=10, label="Vol Boost")
@@ -219,8 +218,6 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             fname = gr.Textbox(label="File Name")
             
             btn = gr.Button("Generate", variant="primary")
-            
-            # Status Label (Usage Count & Duration)
             lbl_status = gr.Label(value="📊 သုံးစွဲမှု: 0 | ⏳ စုစုပေါင်းကြာချိန်: ၀၀ မိနစ် ၀၀ စက္ကန့်", label="Live Usage Stats")
             
         with gr.Column():
