@@ -6,10 +6,11 @@ import os
 from pydub import AudioSegment
 import re
 import datetime
+import pytz # အချိန်ကို မြန်မာစံတော်ချိန်နဲ့ ပြဖို့
 
-# --- Global Counter Variable ---
-# Server စက်နိုးနေသမျှ ကာလပတ်လုံး ဒီဂဏန်းက တိုးသွားပါမယ်
+# --- Global Variables ---
 SESSION_COUNT = 0
+LAST_USED_TIME = "မရှိသေးပါ"
 
 # --- Setup ---
 VOICES = [
@@ -149,15 +150,20 @@ async def generate_precise_audio(text, pronunciation_rules, voice_key, rate_str,
 async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, volume_val, filename_val, platform_val):
     if not text.strip(): raise gr.Error("စာရိုက်ထည့်ပါ!")
 
-    # --- COUNTER LOGIC ---
-    global SESSION_COUNT
-    SESSION_COUNT += 1
-    current_count_msg = f"အသုံးပြုသူအရေအတွက် (Session): {SESSION_COUNT}"
+    # --- COUNTER & TIME LOGIC ---
+    global SESSION_COUNT, LAST_USED_TIME
     
-    # Log ထဲမှာလည်း ပြမယ်
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"🔔 [COUNT] Total: {SESSION_COUNT} | Time: {current_time}")
-    # ---------------------
+    SESSION_COUNT += 1
+    
+    # မြန်မာစံတော်ချိန် (MMT)
+    tz_MM = pytz.timezone('Asia/Yangon')
+    datetime_MM = datetime.datetime.now(tz_MM)
+    LAST_USED_TIME = datetime_MM.strftime("%I:%M %p")
+
+    # Status Message
+    status_msg = f"📊 အသုံးပြုမှု: {SESSION_COUNT} ကြိမ် | 🕒 နောက်ဆုံးသုံးချိန်: {LAST_USED_TIME}"
+    print(f"\n🔔 [USAGE] Count: {SESSION_COUNT} | Time: {LAST_USED_TIME}\n")
+    # ----------------------------
     
     target_key = "my-MM-ThihaNeural"
     if "Female" in str(voice_name): target_key = "my-MM-NilarNeural"
@@ -183,8 +189,7 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_text)
 
-        # Output ၃ ခု ပြန်ပို့မယ် (Audio, SRT, Counter Message)
-        return audio_path, srt_path, current_count_msg
+        return audio_path, srt_path, status_msg
         
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
@@ -196,8 +201,8 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="Voice")
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT Type")
             
-            # Default Values (+15, +25, +10)
-            tone = gr.Slider(-50, 50, value=15, label="Pitch")
+            # Updated Settings: Pitch=7, Speed=25, Vol=10
+            tone = gr.Slider(-50, 50, value=7, label="Pitch")
             speed = gr.Slider(-50, 50, value=25, label="Speed")
             vol = gr.Slider(0, 20, value=10, label="Vol Boost")
             
@@ -205,16 +210,14 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="Rules")
             fname = gr.Textbox(label="File Name")
             
-            # ခလုတ်နဲ့ ကောင်တာပြမယ့်နေရာ
             btn = gr.Button("Generate", variant="primary")
-            lbl_count = gr.Label(value="အသုံးပြုသူအရေအတွက်: 0", label="Counter") # ဒီမှာ ဂဏန်းပေါ်မယ်
+            lbl_status = gr.Label(value="📊 အသုံးပြုမှု: 0 | 🕒 စောင့်ဆိုင်းနေပါသည်...", label="Live Status")
             
         with gr.Column():
             out_aud = gr.Audio(label="Audio")
             out_srt = gr.File(label="SRT")
             
-    # Output ၃ ခုကို ချိတ်ဆက်ပေးလိုက်ပါတယ်
-    btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt, lbl_count])
+    btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt, lbl_status])
 
 if __name__ == "__main__":
     demo.queue(concurrency_count=2).launch(server_name="0.0.0.0", server_port=7860)
