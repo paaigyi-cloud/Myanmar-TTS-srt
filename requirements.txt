@@ -1,6 +1,7 @@
-gradio>=4.19.2
+gradio==3.50.2
 edge-tts
 pydub
 fastapi
 uvicorn
 python-multipart
+huggingface-hub<0.25.0
