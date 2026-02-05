@@ -1,2 +1,6 @@
+gradio
 edge-tts
-
+pydub
+fastapi
+uvicorn
+python-multipart
