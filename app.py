@@ -25,6 +25,7 @@ DEFAULT_RULES = """
 # --- Helper Functions ---
 def remove_silence_from_end(audio_chunk, silence_thresh=-40.0, chunk_size=10):
     try:
+        # FFmpeg ရှိမှ ဒါအလုပ်လုပ်ပါတယ် (Render Docker မှာ FFmpeg ရှိလို့ အိုကေပါတယ်)
         reversed_audio = audio_chunk.reverse()
         trim_ms = 0
         while trim_ms < len(reversed_audio):
