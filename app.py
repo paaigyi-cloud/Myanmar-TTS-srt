@@ -22,10 +22,9 @@ DEFAULT_RULES = """
 ဦးနှောက် = အုံးနှောက်
 """
 
-# --- Helper: Remove Trailing Silence (FFmpeg သုံးမယ့်နေရာ) ---
+# --- Helper Functions ---
 def remove_silence_from_end(audio_chunk, silence_thresh=-40.0, chunk_size=10):
     try:
-        # Pydub သည် FFmpeg ရှိမှ အလုပ်လုပ်ပါသည်
         reversed_audio = audio_chunk.reverse()
         trim_ms = 0
         while trim_ms < len(reversed_audio):
@@ -108,14 +107,14 @@ async def generate_precise_audio(text, pronunciation_rules, voice_key, rate_str,
             communicate = edge_tts.Communicate(speakable_text, voice_key, rate=rate_str, pitch=pitch_str)
             await communicate.save(temp_fname)
             
-            # FFmpeg Logic Here
+            # FFmpeg Logic Here (Safe on Render Docker)
             audio_segment = AudioSegment.from_mp3(temp_fname)
             audio_segment = remove_silence_from_end(audio_segment)
             
             segment_duration = len(audio_segment) / 1000.0
             combined_audio += audio_segment
             
-            # Pause (50ms)
+            # Natural Pause (50ms)
             combined_audio += AudioSegment.silent(duration=50)
 
             # SRT Logic
@@ -177,7 +176,7 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-# UI
+# UI Setup
 with gr.Blocks(title="Myanmar TTS Pro") as demo:
     gr.Markdown("## မြန်မာ TTS Pro (Render HQ)")
     with gr.Row():
@@ -197,6 +196,5 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
             
     btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
-# 🔥 IMPORTANT: Render အတွက် Port ဖွင့်ပေးခြင်း 🔥
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
