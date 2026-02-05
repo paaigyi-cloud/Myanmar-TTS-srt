@@ -12,7 +12,6 @@ SESSION_COUNT = 0
 TOTAL_SECONDS = 0.0
 
 # --- CSS to Hide Warnings ---
-# ဒီ CSS ကုဒ်က အဝါရောင် Warning box တွေကို အတင်းဖျောက်ခိုင်းလိုက်တာပါ
 CUSTOM_CSS = """
 .toast-wrap { display: none !important; }
 footer { display: none !important; }
@@ -201,7 +200,7 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-# CSS ကို ဒီနေရာမှာ ထည့်လိုက်ပါတယ်
+# CSS and UI Layout
 with gr.Blocks(title="Myanmar TTS Pro", css=CUSTOM_CSS) as demo:
     gr.Markdown("## မြန်မာ TTS Pro (Render HQ)")
     with gr.Row():
@@ -213,7 +212,10 @@ with gr.Blocks(title="Myanmar TTS Pro", css=CUSTOM_CSS) as demo:
             speed = gr.Slider(-50, 50, value=25, label="Speed")
             vol = gr.Slider(0, 20, value=10, label="Vol Boost")
             
-            text = gr.Textbox(lines=5, label="Text")
+            # --- ဒီနေရာမှာ ပြင်ထားပါတယ် (placeholder ထည့်လိုက်ပါတယ်) ---
+            text = gr.Textbox(lines=5, label="Text", placeholder="စာရိုက်ထည့်ပါ...")
+            # -----------------------------------------------------
+            
             rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="Rules")
             fname = gr.Textbox(label="File Name")
             
