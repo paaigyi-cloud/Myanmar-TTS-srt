@@ -198,4 +198,5 @@ with gr.Blocks(title="Myanmar TTS Pro") as demo:
     btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    # ဒီနေရာမှာ ၃ ယောက်ပြိုင်သုံးလို့ရအောင် ပြင်ထားပါတယ်
+    demo.queue(default_concurrency_limit=3).launch(server_name="0.0.0.0", server_port=7860)
