@@ -6,7 +6,7 @@ import os
 from pydub import AudioSegment
 import re
 
-# --- CSS to Hide Warnings (အဝါရောင် Error စာတန်းတွေ ဖျောက်ဖို့) ---
+# --- CSS to Hide Warnings ---
 CUSTOM_CSS = """
 .toast-wrap { display: none !important; }
 footer { display: none !important; }
@@ -174,39 +174,34 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_text)
 
-        # Counter တွေ ဖြုတ်လိုက်ပါပြီ။ Audio နဲ့ SRT ပဲ ပြန်ပို့ပါမယ်။
         return audio_path, srt_path
         
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-# --- UI Layout ---
-with gr.Blocks(title="Myanmar TTS & SRT Generator", css=CUSTOM_CSS) as demo:
+# --- Main UI Blocks ---
+# ဒီနေရာမှာ Title နဲ့ Theme ကို ထည့်ပေးထားပါတယ်
+with gr.Blocks(
+    title="Myanmar TTS SRT Generator",  # Google Tab မှာ ပေါ်မယ့် နာမည်
+    theme=gr.themes.Soft(),             # Dark Mode နဲ့ အဆင်ပြေမယ့် ဒီဇိုင်း
+    css=CUSTOM_CSS
+) as demo:
     
-    # ခေါင်းစဉ် (Title)
     gr.Markdown("## Myanmar TTS & SRT Generator")
     
     with gr.Row():
         with gr.Column():
-            # ၁။ SRT Type
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT ပုံစံ ရွေးရန်")
-            
-            # ၂။ Text Input (စာရိုက်ထည့်ရန်)
             text = gr.Textbox(lines=5, label="စာရိုက်ထည့်ရန် (Text)", placeholder="ဒီနေရာမှာ စာစရိုက်ပါ...")
             
-            # ၃။ Voice & Settings (အသံချိန်ညှိရန်)
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="အသံရွေးရန် (Voice)")
             tone = gr.Slider(-50, 50, value=7, label="အသံ အနိမ့်အမြင့် (Pitch)")
             speed = gr.Slider(-50, 50, value=25, label="အမြန်နှုန်း (Speed)")
             vol = gr.Slider(0, 20, value=10, label="အသံကျယ်အား (Volume)")
             
-            # ၄။ Rules (အသံထွက်ပြင်ရန်)
             rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="အသံထွက် ပြုပြင်ရန် (Rules)")
-            
-            # ၅။ Filename (ဖိုင်နာမည်)
             fname = gr.Textbox(label="ဖိုင်နာမည် (File Name)")
             
-            # Generate Button
             btn = gr.Button("အသံထုတ်မည် (Generate)", variant="primary")
             
         with gr.Column():
