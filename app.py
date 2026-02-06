@@ -5,13 +5,8 @@ import tempfile
 import os
 from pydub import AudioSegment
 import re
-import datetime
 
-# --- Global Variables ---
-SESSION_COUNT = 0
-TOTAL_SECONDS = 0.0
-
-# --- CSS to Hide Warnings ---
+# --- CSS to Hide Warnings (အဝါရောင် Error စာတန်းတွေ ဖျောက်ဖို့) ---
 CUSTOM_CSS = """
 .toast-wrap { display: none !important; }
 footer { display: none !important; }
@@ -56,12 +51,6 @@ def format_srt_time(seconds):
     minutes %= 60
     seconds %= 60
     return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
-
-def format_duration_display(total_seconds):
-    total_seconds = int(total_seconds)
-    minutes = total_seconds // 60
-    seconds = total_seconds % 60
-    return f"{minutes:02} မိနစ် {seconds:02} စက္ကန့်"
 
 def apply_pronunciation_rules(text, rules_str):
     if not rules_str: return text
@@ -185,48 +174,46 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         with open(srt_path, "w", encoding="utf-8") as f:
             f.write(srt_text)
 
-        global SESSION_COUNT, TOTAL_SECONDS
-        SESSION_COUNT += 1
-        generated_duration = len(final_audio) / 1000.0
-        TOTAL_SECONDS += generated_duration
-        
-        duration_str = format_duration_display(TOTAL_SECONDS)
-        status_msg = f"📊 သုံးစွဲမှု: {SESSION_COUNT} ကြိမ် | ⏳ စုစုပေါင်းကြာချိန်: {duration_str}"
-        
-        print(f"\n🔔 [USAGE] Added {generated_duration:.2f}s | Total: {duration_str}\n")
-
-        return audio_path, srt_path, status_msg
+        # Counter တွေ ဖြုတ်လိုက်ပါပြီ။ Audio နဲ့ SRT ပဲ ပြန်ပို့ပါမယ်။
+        return audio_path, srt_path
         
     except Exception as e:
         raise gr.Error(f"Error: {str(e)}")
 
-# CSS and UI Layout
-with gr.Blocks(title="Myanmar TTS Pro", css=CUSTOM_CSS) as demo:
-    gr.Markdown("## မြန်မာ TTS Pro (Render HQ)")
+# --- UI Layout ---
+with gr.Blocks(title="Myanmar TTS & SRT Generator", css=CUSTOM_CSS) as demo:
+    
+    # ခေါင်းစဉ် (Title)
+    gr.Markdown("## Myanmar TTS & SRT Generator")
+    
     with gr.Row():
         with gr.Column():
-            voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="Voice")
-            platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT Type")
+            # ၁။ SRT Type
+            platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT ပုံစံ ရွေးရန်")
             
-            tone = gr.Slider(-50, 50, value=7, label="Pitch")
-            speed = gr.Slider(-50, 50, value=25, label="Speed")
-            vol = gr.Slider(0, 20, value=10, label="Vol Boost")
+            # ၂။ Text Input (စာရိုက်ထည့်ရန်)
+            text = gr.Textbox(lines=5, label="စာရိုက်ထည့်ရန် (Text)", placeholder="ဒီနေရာမှာ စာစရိုက်ပါ...")
             
-            # --- ဒီနေရာမှာ ပြင်ထားပါတယ် (placeholder ထည့်လိုက်ပါတယ်) ---
-            text = gr.Textbox(lines=5, label="Text", placeholder="စာရိုက်ထည့်ပါ...")
-            # -----------------------------------------------------
+            # ၃။ Voice & Settings (အသံချိန်ညှိရန်)
+            voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="အသံရွေးရန် (Voice)")
+            tone = gr.Slider(-50, 50, value=7, label="အသံ အနိမ့်အမြင့် (Pitch)")
+            speed = gr.Slider(-50, 50, value=25, label="အမြန်နှုန်း (Speed)")
+            vol = gr.Slider(0, 20, value=10, label="အသံကျယ်အား (Volume)")
             
-            rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="Rules")
-            fname = gr.Textbox(label="File Name")
+            # ၄။ Rules (အသံထွက်ပြင်ရန်)
+            rules = gr.Textbox(lines=5, value=DEFAULT_RULES, label="အသံထွက် ပြုပြင်ရန် (Rules)")
             
-            btn = gr.Button("Generate", variant="primary")
-            lbl_status = gr.Label(value="📊 သုံးစွဲမှု: 0 | ⏳ စုစုပေါင်းကြာချိန်: ၀၀ မိနစ် ၀၀ စက္ကန့်", label="Live Usage Stats")
+            # ၅။ Filename (ဖိုင်နာမည်)
+            fname = gr.Textbox(label="ဖိုင်နာမည် (File Name)")
+            
+            # Generate Button
+            btn = gr.Button("အသံထုတ်မည် (Generate)", variant="primary")
             
         with gr.Column():
-            out_aud = gr.Audio(label="Audio")
-            out_srt = gr.File(label="SRT")
+            out_aud = gr.Audio(label="ရရှိလာသော အသံ (Audio)")
+            out_srt = gr.File(label="စာတန်းထိုး ဖိုင် (SRT)")
             
-    btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt, lbl_status])
+    btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
 if __name__ == "__main__":
     demo.queue(concurrency_count=2).launch(server_name="0.0.0.0", server_port=7860)
