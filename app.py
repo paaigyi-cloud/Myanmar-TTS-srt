@@ -12,12 +12,14 @@ CUSTOM_CSS = """
 footer { display: none !important; }
 """
 
-# --- Setup ---
+# --- Setup (နာမည်များ ပြောင်းထားသည်) ---
 VOICES = [
     ("အကိုလေး (Male)", "my-MM-ThihaNeural"),
     ("မြမြ (Female)", "my-MM-NilarNeural"),
-    ("English UK (Female)", "en-GB-SoniaNeural"),
-    ("English UK (Male)", "en-GB-RyanNeural")
+    ("ဂျနီဖာ (Eng Female)", "en-GB-SoniaNeural"),
+    ("ဒေးဗစ် (Eng Male)", "en-GB-RyanNeural"),
+    ("ဂူဂူး (China Female)", "zh-CN-XiaoxiaoNeural"),
+    ("မုံယောင် (China Male)", "zh-CN-YunxiNeural")
 ]
 
 DEFAULT_RULES = """
@@ -150,10 +152,16 @@ async def generate_precise_audio(text, pronunciation_rules, voice_key, rate_str,
 async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, volume_val, filename_val, platform_val):
     if not text.strip(): raise gr.Error("စာရိုက်ထည့်ပါ!")
 
-    target_key = "my-MM-ThihaNeural"
-    if "Female" in str(voice_name): target_key = "my-MM-NilarNeural"
-    elif "Ryan" in str(voice_name): target_key = "en-GB-RyanNeural"
-    elif "Sonia" in str(voice_name): target_key = "en-GB-SoniaNeural"
+    # --- Voice Key Finder ---
+    target_key = None
+    for name, key in VOICES:
+        if name == voice_name:
+            target_key = key
+            break
+    
+    if not target_key:
+        target_key = "my-MM-ThihaNeural"
+    # ------------------------
             
     pitch_str = f"{int(tone_val) * -1:+d}Hz"
     rate_str = f"{int(speed_val):+d}%"
@@ -180,10 +188,9 @@ async def generate_audio_final(text, rules, voice_name, tone_val, speed_val, vol
         raise gr.Error(f"Error: {str(e)}")
 
 # --- Main UI Blocks ---
-# ဒီနေရာမှာ Title နဲ့ Theme ကို ထည့်ပေးထားပါတယ်
 with gr.Blocks(
-    title="Myanmar TTS SRT Generator",  # Google Tab မှာ ပေါ်မယ့် နာမည်
-    theme=gr.themes.Soft(),             # Dark Mode နဲ့ အဆင်ပြေမယ့် ဒီဇိုင်း
+    title="Myanmar TTS SRT Generator",
+    theme=gr.themes.Soft(),
     css=CUSTOM_CSS
 ) as demo:
     
@@ -192,9 +199,11 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column():
             platform = gr.Radio(["TikTok (9:16)", "YouTube (16:9)"], value="TikTok (9:16)", label="SRT ပုံစံ ရွေးရန်")
-            text = gr.Textbox(lines=5, label="စာရိုက်ထည့်ရန် (Text)", placeholder="ဒီနေရာမှာ စာစရိုက်ပါ...")
+            text = gr.Textbox(lines=5, label="စာရိုက်ထည့်ရန် (Text)", placeholder="ဒီနေရာမှာ စာစရိုက်ပါ (မြန်မာ၊ အင်္ဂလိပ်၊ တရုတ်)...")
             
+            # Updated Names Displayed Here
             voice = gr.Dropdown([v[0] for v in VOICES], value="အကိုလေး (Male)", label="အသံရွေးရန် (Voice)")
+            
             tone = gr.Slider(-50, 50, value=7, label="အသံ အနိမ့်အမြင့် (Pitch)")
             speed = gr.Slider(-50, 50, value=25, label="အမြန်နှုန်း (Speed)")
             vol = gr.Slider(0, 20, value=10, label="အသံကျယ်အား (Volume)")
