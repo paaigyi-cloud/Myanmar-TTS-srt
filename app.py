@@ -1,4 +1,4 @@
-import gradio as gr
+import Wgradio as gr
 import edge_tts
 import asyncio
 import tempfile
