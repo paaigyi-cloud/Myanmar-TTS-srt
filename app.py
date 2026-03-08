@@ -220,4 +220,4 @@ with gr.Blocks(
     btn.click(generate_audio_final, inputs=[text, rules, voice, tone, speed, vol, fname, platform], outputs=[out_aud, out_srt])
 
 if __name__ == "__main__":
-    demo.queue(concurrency_count=2).launch(server_name="0.0.0.01", server_port=7860)
+    demo.queue(concurrency_count=2).launch(server_name="0.0.0.0", server_port=7860)
