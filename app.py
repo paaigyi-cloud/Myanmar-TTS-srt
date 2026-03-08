@@ -1,25 +1,37 @@
-import gradio as gr
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+import uvicorn
 import os
 
-with gr.Blocks() as demo:
-    gr.Markdown(
-        """
-        <div style="text-align: center; padding: 50px;">
-            <h1 style="color: #ff4b4b;">⚠️ အသိပေးအကြောင်းကြားချက်</h1>
-            <br>
-            <h3 style="line-height: 1.8; color: #333;">
-                အသုံးပြုသူများလာသောကြောင့် Server မနိုင်တော့ပါသဖြင့်<br>
-                Telegram သို့ ဝင်ရောက်အသုံးပြုပေးကြပါရန် မေတ္တာရပ်ခံပါသည်။
-            </h3>
-            <br><br>
-            <a href="https://t.me/+j9i087I30oMyZTdl" target="_blank" style="background-color: #0088cc; color: white; padding: 20px 40px; text-decoration: none; border-radius: 10px; font-size: 20px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,136,204,0.3);">
-                👉 Telegram Group သို့ ဝင်ရောက်ရန် ဤနေရာကို နှိပ်ပါ
-            </a>
-        </div>
-        """
-    )
+app = FastAPI()
+
+@app.get("/", response_class=HTMLResponse)
+def read_root():
+    return """
+    <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Myanmar TTS Notification</title>
+            <style>
+                body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f7f6; }
+                .container { text-align: center; padding: 40px; background: white; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 500px; margin: 20px; }
+                h1 { color: #ff4b4b; margin-bottom: 20px; }
+                h3 { line-height: 1.8; color: #333; margin-bottom: 30px; }
+                .btn { background-color: #0088cc; color: white; padding: 18px 35px; text-decoration: none; border-radius: 10px; font-size: 18px; font-weight: bold; display: inline-block; box-shadow: 0 4px 15px rgba(0,136,204,0.3); }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>⚠️ အသိပေးချက်</h1>
+                <h3>အသုံးပြုသူများလာသောကြောင့် Server မနိုင်တော့ပါသဖြင့်<br>Telegram သို့ ဝင်ရောက်အသုံးပြုပေးကြပါရန် မေတ္တာရပ်ခံပါသည်။</h3>
+                <a href="https://t.me/+j9i087I30oMyZTdl" class="btn">👉 Telegram Group သို့ ဝင်ရန်</a>
+            </div>
+        </body>
+    </html>
+    """
 
 if __name__ == "__main__":
-    # Render ရဲ့ Port စနစ်နဲ့ ကိုက်ညီအောင် ပြင်ဆင်ထားခြင်း
-    server_port = int(os.environ.get("PORT", 10000))
-    demo.launch(server_name="0.0.0.0", server_port=server_port)
+    # Render ၏ Port Binding ပြဿနာကို ဖြေရှင်းရန်
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
