@@ -5,7 +5,8 @@ import os
 
 app = FastAPI()
 
-@app.get("/", response_class=HTMLResponse)
+# UptimeRobot မှ လာသော မတူညီသည့် HTTP Method များကို လက်ခံနိုင်ရန် api_route ကို ပြောင်းလဲအသုံးပြုထားပါသည်
+@app.api_route("/", methods=["GET", "HEAD", "POST", "OPTIONS"], response_class=HTMLResponse)
 def read_root():
     return """
     <html>
@@ -24,7 +25,7 @@ def read_root():
         <body>
             <div class="container">
                 <h1>⚠️ အသိပေးချက်</h1>
-                <h3>အသုံးပြုသူများလာသောကြောင့် Server မနိုင်တော့ပါသဖြင့်<br>Telegram သို့ ဝင်ရောက်အသုံးပြုပေးကြပါရန် မေတ္တာရပ်ခံပါသည်။</h3>
+                <h3>အသုံးပြုသူများလာသောကြောင့် Server မနိုင်တော့ပါသဖြင့်<br>Telegram သို့ ဝင်ရောက်အသုံးပြုပေးကြပါရန် မေတ္တာရပ်ခံအပ်ပါသည်။</h3>
                 <a href="https://t.me/+j9i087I30oMyZTdl" class="btn">👉 Telegram Group သို့ ဝင်ရန်</a>
             </div>
         </body>
